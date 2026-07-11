@@ -1,10 +1,20 @@
 # Windfall Aurora Protocol — Decentralized Web3 Lottery
 
-[![Windfall CI Status](#)](#)
+[![Windfall CI Status](https://github.com/resonace/windfall/actions/workflows/ci.yml/badge.svg)](https://github.com/resonace/windfall/actions/workflows/ci.yml)
 ![Stellar Testnet Badge](https://img.shields.io/badge/stellar-testnet-blue)
 
 **Live App Demo:** [https://windfall.travel-ipod-fifty.workers.dev/](https://windfall.travel-ipod-fifty.workers.dev/)
-**Demo Video:** [INSERT_DEMO_VIDEO_HERE]
+
+## Demo Video
+![Windfall Demo](ss/Snapzy_Recording_2026-07-11_14-30-58.gif)
+
+## Screenshots
+<div align="center">
+  <img src="ss/Snapzy_2026-07-11_14-32-43_766.png" width="45%" />
+  <img src="ss/Snapzy_2026-07-11_14-33-03_402.png" width="45%" />
+  <img src="ss/Snapzy_2026-07-11_14-33-31_359.png" width="45%" />
+  <img src="ss/Snapzy_2026-07-11_14-33-42_930.png" width="45%" />
+</div>
 
 ## Project Description
 
