@@ -3,7 +3,8 @@
 [![Windfall CI Status](#)](#)
 ![Stellar Testnet Badge](https://img.shields.io/badge/stellar-testnet-blue)
 
-Demo Video: [INSERT_DEMO_VIDEO_HERE]
+**Live App Demo:** [https://windfall.travel-ipod-fifty.workers.dev/](https://windfall.travel-ipod-fifty.workers.dev/)
+**Demo Video:** [INSERT_DEMO_VIDEO_HERE]
 
 ## Project Description
 
