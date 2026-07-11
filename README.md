@@ -91,12 +91,13 @@ The mechanism used is `env.invoke_contract::<ReturnType>`.
 
 All interactions in this protocol represent cryptographic certainty on the Stellar testnet.
 
-- **PrizePoolCoordinator Address:** `CCXJAB4G3LYH4Q3KZZQMYB6C433U7LNT7T4E5O3R5P3H7H3J5ZLZXY3H`
-- **EntryToken Address:** `CCZQMYB6C433U7LNT7T4E5O3R5P3H7H3J5ZLZXY3HXJAB4G3LYH4Q3K2`
-- **FeeVault Address:** `CAV7T4E5O3R5P3H7H3J5ZLZXY3HXJAB4G3LYH4Q3KZZQMYB6C433U7LN`
+- **PrizePoolCoordinator Address:** `CATUTIUOM66JOOOICVEXLFD6XY57L5EFE7GERJQI5MPFAYSEITX4KNFU`
+- **EntryToken Address:** `CBLEORDL4QDINNDCATYATUR7QF5FWHQ2NTWC4KG3JCN5WOKYNTLN4NBJ`
+- **FeeVault Address:** `CBJ4JG5I4UHOESH4FVBBS77PTBA63N2OYYJEZJLW2Z22VAHC4TX6TYTI`
 
-**Sample Transaction Hash:**
-`a8b1c435ef2f349d949ac21bc23194a21087df24810be124fa43423beffae123`
+**Sample Transaction Hashes:**
+- `dff700c05f216af6b4954165f35547be4340f6170ccdda709d6a6f52c1eac7b8` (Coordinator→EntryToken Mint)
+- `ff0d935b7b882bb6d344e050375eb6362ea091766fc988e1d45f722b3c533312` (Coordinator→FeeVault Dispersal)
 
 All endpoints are verifiable on the [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet/).
 
