@@ -25,6 +25,12 @@ jobs:
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Check Formatting
+        run: cargo fmt --check
+
+      - name: Run Clippy Lints
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
       - name: Run Contract Tests
         run: cargo test --verbose
 

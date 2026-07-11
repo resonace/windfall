@@ -1,13 +1,13 @@
 #![cfg(test)]
 
 use super::*;
+use entry_token::EntryTokenContract;
+use fee_vault::FeeVaultContract;
 use soroban_sdk::{
     testutils::{Address as _, Ledger},
     token::{StellarAssetClient, TokenClient},
     Address, Env,
 };
-use entry_token::EntryTokenContract;
-use fee_vault::FeeVaultContract;
 
 fn setup_test(
     env: &Env,
@@ -49,7 +49,8 @@ fn setup_test(
 
     // Deploy PrizePoolCoordinatorContract
     let prize_pool_coordinator_id = env.register(PrizePoolCoordinatorContract, ());
-    let prize_pool_coordinator_client = PrizePoolCoordinatorContractClient::new(env, &prize_pool_coordinator_id);
+    let prize_pool_coordinator_client =
+        PrizePoolCoordinatorContractClient::new(env, &prize_pool_coordinator_id);
 
     // Initialize contracts
     prize_pool_coordinator_client.init(
@@ -62,7 +63,11 @@ fn setup_test(
     );
 
     token_client.init(&prize_pool_coordinator_id);
-    fee_vault_client.init(&fee_vault_admin, &prize_pool_coordinator_id, &xlm_token_addr);
+    fee_vault_client.init(
+        &fee_vault_admin,
+        &prize_pool_coordinator_id,
+        &xlm_token_addr,
+    );
 
     (
         admin,
@@ -114,23 +119,35 @@ fn test_initialize_epoch_fails_if_active() {
 #[test]
 fn test_buy_entry_token_success() {
     let env = Env::default();
-    let (_, buyer1, _, _, xlm_token, prize_pool_coordinator_client, token_client, _) = setup_test(&env);
+    let (_, buyer1, _, _, xlm_token, prize_pool_coordinator_client, token_client, _) =
+        setup_test(&env);
 
     let epoch_id = prize_pool_coordinator_client.initialize_epoch(&3600);
 
     // Approve prize_pool_coordinator contract to spend buyer1's XLM
     let xlm_client = TokenClient::new(&env, &xlm_token);
-    xlm_client.approve(&buyer1, &prize_pool_coordinator_client.address, &100, &10000);
+    xlm_client.approve(
+        &buyer1,
+        &prize_pool_coordinator_client.address,
+        &100,
+        &10000,
+    );
 
     prize_pool_coordinator_client.buy_entry_token(&buyer1, &epoch_id);
 
     // Check balances
     assert_eq!(xlm_client.balance(&buyer1), 9900);
-    assert_eq!(xlm_client.balance(&prize_pool_coordinator_client.address), 100);
+    assert_eq!(
+        xlm_client.balance(&prize_pool_coordinator_client.address),
+        100
+    );
 
     // Check entry_token count
     assert_eq!(token_client.balance(&buyer1, &epoch_id), 1);
-    assert_eq!(prize_pool_coordinator_client.get_entry_tokens(&epoch_id, &buyer1), 1);
+    assert_eq!(
+        prize_pool_coordinator_client.get_entry_tokens(&epoch_id, &buyer1),
+        1
+    );
 
     let info = prize_pool_coordinator_client.get_round(&epoch_id);
     assert_eq!(info.entry_token_count, 1);
@@ -146,7 +163,12 @@ fn test_buy_entry_token_fails_if_closed() {
     let epoch_id = prize_pool_coordinator_client.initialize_epoch(&3600);
 
     let xlm_client = TokenClient::new(&env, &xlm_token);
-    xlm_client.approve(&buyer1, &prize_pool_coordinator_client.address, &100, &10000);
+    xlm_client.approve(
+        &buyer1,
+        &prize_pool_coordinator_client.address,
+        &100,
+        &10000,
+    );
 
     // Travel in time to end of round
     env.ledger().set_timestamp(4700);
@@ -157,13 +179,32 @@ fn test_buy_entry_token_fails_if_closed() {
 #[test]
 fn test_conclude_epoch_success() {
     let env = Env::default();
-    let (_admin, buyer1, buyer2, _fee_vault_admin, xlm_token, prize_pool_coordinator_client, _token_client, fee_vault_client) = setup_test(&env);
+    let (
+        _admin,
+        buyer1,
+        buyer2,
+        _fee_vault_admin,
+        xlm_token,
+        prize_pool_coordinator_client,
+        _token_client,
+        fee_vault_client,
+    ) = setup_test(&env);
 
     let epoch_id = prize_pool_coordinator_client.initialize_epoch(&3600);
 
     let xlm_client = TokenClient::new(&env, &xlm_token);
-    xlm_client.approve(&buyer1, &prize_pool_coordinator_client.address, &300, &10000);
-    xlm_client.approve(&buyer2, &prize_pool_coordinator_client.address, &200, &10000);
+    xlm_client.approve(
+        &buyer1,
+        &prize_pool_coordinator_client.address,
+        &300,
+        &10000,
+    );
+    xlm_client.approve(
+        &buyer2,
+        &prize_pool_coordinator_client.address,
+        &200,
+        &10000,
+    );
 
     // Buyer1 buys 3 entry_tokens, Buyer2 buys 2 entry_tokens
     prize_pool_coordinator_client.buy_entry_token(&buyer1, &epoch_id);
@@ -172,7 +213,10 @@ fn test_conclude_epoch_success() {
     prize_pool_coordinator_client.buy_entry_token(&buyer2, &epoch_id);
     prize_pool_coordinator_client.buy_entry_token(&buyer2, &epoch_id);
 
-    assert_eq!(xlm_client.balance(&prize_pool_coordinator_client.address), 500);
+    assert_eq!(
+        xlm_client.balance(&prize_pool_coordinator_client.address),
+        500
+    );
 
     // Advance block time
     env.ledger().set_timestamp(4700);
@@ -182,7 +226,10 @@ fn test_conclude_epoch_success() {
     assert!(victor == buyer1 || victor == buyer2);
 
     // Total fee is 5% of 500 = 25 XLM. Winner payout is 475 XLM.
-    assert_eq!(xlm_client.balance(&prize_pool_coordinator_client.address), 0);
+    assert_eq!(
+        xlm_client.balance(&prize_pool_coordinator_client.address),
+        0
+    );
     assert_eq!(xlm_client.balance(&fee_vault_client.address), 25);
     assert_eq!(fee_vault_client.total_fees(), 25);
 
@@ -250,7 +297,12 @@ fn test_conclude_epoch_fails_before_epoch_conclusion() {
     let epoch_id = prize_pool_coordinator_client.initialize_epoch(&3600);
 
     let xlm_client = TokenClient::new(&env, &xlm_token);
-    xlm_client.approve(&buyer1, &prize_pool_coordinator_client.address, &100, &10000);
+    xlm_client.approve(
+        &buyer1,
+        &prize_pool_coordinator_client.address,
+        &100,
+        &10000,
+    );
     prize_pool_coordinator_client.buy_entry_token(&buyer1, &epoch_id);
 
     // Settle immediately (before epoch_conclusion) - should panic
@@ -266,7 +318,12 @@ fn test_conclude_epoch_cannot_be_called_twice() {
     let epoch_id = prize_pool_coordinator_client.initialize_epoch(&3600);
 
     let xlm_client = TokenClient::new(&env, &xlm_token);
-    xlm_client.approve(&buyer1, &prize_pool_coordinator_client.address, &100, &10000);
+    xlm_client.approve(
+        &buyer1,
+        &prize_pool_coordinator_client.address,
+        &100,
+        &10000,
+    );
     prize_pool_coordinator_client.buy_entry_token(&buyer1, &epoch_id);
 
     // Advance time
@@ -285,13 +342,23 @@ fn test_victor_index_always_within_bounds() {
     let (_, buyer1, buyer2, _, xlm_token, prize_pool_coordinator_client, _, _) = setup_test(&env);
 
     let xlm_client = TokenClient::new(&env, &xlm_token);
-    xlm_client.approve(&buyer1, &prize_pool_coordinator_client.address, &10000, &10000);
-    xlm_client.approve(&buyer2, &prize_pool_coordinator_client.address, &10000, &10000);
+    xlm_client.approve(
+        &buyer1,
+        &prize_pool_coordinator_client.address,
+        &10000,
+        &10000,
+    );
+    xlm_client.approve(
+        &buyer2,
+        &prize_pool_coordinator_client.address,
+        &10000,
+        &10000,
+    );
 
     // Test across 5 different rounds with varying entry_token counts
     for i in 1..=5 {
         let epoch_id = prize_pool_coordinator_client.initialize_epoch(&3600);
-        
+
         let entry_tokens_count = i * 2; // 2, 4, 6, 8, 10
         for _ in 0..entry_tokens_count / 2 {
             prize_pool_coordinator_client.buy_entry_token(&buyer1, &epoch_id);

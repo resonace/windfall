@@ -46,12 +46,22 @@ impl PrizePoolCoordinatorContract {
             panic!("already initialized");
         }
         env.storage().instance().set(&DataKey::Admin, &admin);
-        env.storage().instance().set(&DataKey::EntryTokenContract, &entry_token_contract);
-        env.storage().instance().set(&DataKey::FeeVaultContract, &fee_vault_contract);
+        env.storage()
+            .instance()
+            .set(&DataKey::EntryTokenContract, &entry_token_contract);
+        env.storage()
+            .instance()
+            .set(&DataKey::FeeVaultContract, &fee_vault_contract);
         env.storage().instance().set(&DataKey::Token, &token);
-        env.storage().instance().set(&DataKey::EntryTokenPrice, &entry_token_price);
-        env.storage().instance().set(&DataKey::FeeBps, &tax_basis_points);
-        env.storage().instance().set(&DataKey::CurrentEpochId, &0u32);
+        env.storage()
+            .instance()
+            .set(&DataKey::EntryTokenPrice, &entry_token_price);
+        env.storage()
+            .instance()
+            .set(&DataKey::FeeBps, &tax_basis_points);
+        env.storage()
+            .instance()
+            .set(&DataKey::CurrentEpochId, &0u32);
     }
 
     pub fn fetch_admin(env: Env) -> Address {
@@ -74,11 +84,8 @@ impl PrizePoolCoordinatorContract {
         if current_id > 0 {
             let last_round_key = DataKey::Epoch(current_id);
             if env.storage().persistent().has(&last_round_key) {
-                let last_round: EpochInfo = env
-                    .storage()
-                    .persistent()
-                    .get(&last_round_key)
-                    .unwrap();
+                let last_round: EpochInfo =
+                    env.storage().persistent().get(&last_round_key).unwrap();
                 if last_round.status == 1 {
                     panic!("previous round is still active");
                 }
@@ -87,7 +94,11 @@ impl PrizePoolCoordinatorContract {
 
         current_id = current_id.saturating_add(1);
         let epoch_conclusion = env.ledger().timestamp().saturating_add(duration_secs);
-        let entry_token_price: i128 = env.storage().instance().get(&DataKey::EntryTokenPrice).unwrap_or(0);
+        let entry_token_price: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::EntryTokenPrice)
+            .unwrap_or(0);
 
         let round_info = EpochInfo {
             epoch_id: current_id,
@@ -99,15 +110,18 @@ impl PrizePoolCoordinatorContract {
             victor: None,
         };
 
-        env.storage().instance().set(&DataKey::CurrentEpochId, &current_id);
-        env.storage().persistent().set(&DataKey::Epoch(current_id), &round_info);
+        env.storage()
+            .instance()
+            .set(&DataKey::CurrentEpochId, &current_id);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Epoch(current_id), &round_info);
 
         // Publish event
-        let event_data: soroban_sdk::Vec<Val> = soroban_sdk::vec![
-            &env,
-            epoch_conclusion.into_val(&env)
-        ];
-        env.events().publish((Symbol::new(&env, "round_opened"), current_id), event_data);
+        let event_data: soroban_sdk::Vec<Val> =
+            soroban_sdk::vec![&env, epoch_conclusion.into_val(&env)];
+        env.events()
+            .publish((Symbol::new(&env, "round_opened"), current_id), event_data);
 
         current_id
     }
@@ -131,44 +145,48 @@ impl PrizePoolCoordinatorContract {
             panic!("round already closed");
         }
 
-        let token = env.storage().instance().get(&DataKey::Token).unwrap_or_else(|| panic!("no token"));
+        let token = env
+            .storage()
+            .instance()
+            .get(&DataKey::Token)
+            .unwrap_or_else(|| panic!("no token"));
 
         // Pull funds from buyer to this contract
         let args = soroban_sdk::vec![
             &env,
             env.current_contract_address().into_val(&env), // spender
-            buyer.into_val(&env), // from
+            buyer.into_val(&env),                          // from
             env.current_contract_address().into_val(&env), // to
-            round.entry_token_price.into_val(&env) // amount
+            round.entry_token_price.into_val(&env)         // amount
         ];
-        let _: () = env.invoke_contract(
-            &token,
-            &Symbol::new(&env, "transfer_from"),
-            args,
-        );
+        let _: () = env.invoke_contract(&token, &Symbol::new(&env, "transfer_from"), args);
 
-        let entry_token_contract = env.storage().instance().get(&DataKey::EntryTokenContract).unwrap_or_else(|| panic!("no entry_token contract"));
+        let entry_token_contract = env
+            .storage()
+            .instance()
+            .get(&DataKey::EntryTokenContract)
+            .unwrap_or_else(|| panic!("no entry_token contract"));
 
         // Mint one entry_token token to buyer
-        let mint_args = soroban_sdk::vec![
-            &env,
-            buyer.clone().into_val(&env),
-            epoch_id.into_val(&env)
-        ];
-        let _: () = env.invoke_contract(
-            &entry_token_contract,
-            &Symbol::new(&env, "mint"),
-            mint_args,
-        );
+        let mint_args =
+            soroban_sdk::vec![&env, buyer.clone().into_val(&env), epoch_id.into_val(&env)];
+        let _: () =
+            env.invoke_contract(&entry_token_contract, &Symbol::new(&env, "mint"), mint_args);
 
         // Update round stats
         round.entry_token_count = round.entry_token_count.saturating_add(1);
-        round.active_liquidity = round.entry_token_price.saturating_mul(round.entry_token_count as i128);
+        round.active_liquidity = round
+            .entry_token_price
+            .saturating_mul(round.entry_token_count as i128);
         env.storage().persistent().set(&round_key, &round);
 
         // Publish event
-        let event_data: soroban_sdk::Vec<soroban_sdk::Val> = soroban_sdk::vec![&env, buyer.into_val(&env)];
-        env.events().publish((Symbol::new(&env, "entry_token_bought"), epoch_id), event_data);
+        let event_data: soroban_sdk::Vec<soroban_sdk::Val> =
+            soroban_sdk::vec![&env, buyer.into_val(&env)];
+        env.events().publish(
+            (Symbol::new(&env, "entry_token_bought"), epoch_id),
+            event_data,
+        );
     }
 
     pub fn conclude_epoch(env: Env, epoch_id: u32) -> Address {
@@ -188,7 +206,11 @@ impl PrizePoolCoordinatorContract {
             panic!("round timer has not expired");
         }
 
-        let entry_token_contract = env.storage().instance().get(&DataKey::EntryTokenContract).unwrap_or_else(|| panic!("no entry_token contract"));
+        let entry_token_contract = env
+            .storage()
+            .instance()
+            .get(&DataKey::EntryTokenContract)
+            .unwrap_or_else(|| panic!("no entry_token contract"));
 
         if round.entry_token_count == 0 {
             // Void the round
@@ -196,7 +218,8 @@ impl PrizePoolCoordinatorContract {
             env.storage().persistent().set(&round_key, &round);
 
             // Publish event
-            env.events().publish((Symbol::new(&env, "round_voided"), epoch_id), ());
+            env.events()
+                .publish((Symbol::new(&env, "round_voided"), epoch_id), ());
 
             return env.current_contract_address();
         }
@@ -219,7 +242,11 @@ impl PrizePoolCoordinatorContract {
         let victor: Address = env.invoke_contract(
             &entry_token_contract,
             &Symbol::new(&env, "get_owner"),
-            soroban_sdk::vec![&env, epoch_id.into_val(&env), winning_entry_token_index.into_val(&env)],
+            soroban_sdk::vec![
+                &env,
+                epoch_id.into_val(&env),
+                winning_entry_token_index.into_val(&env)
+            ],
         );
 
         let tax_basis_points: u32 = env.storage().instance().get(&DataKey::FeeBps).unwrap_or(0);
@@ -227,7 +254,11 @@ impl PrizePoolCoordinatorContract {
         let fee = (active_liquidity * (tax_basis_points as i128)) / 10000;
         let payout = active_liquidity - fee;
 
-        let token = env.storage().instance().get(&DataKey::Token).unwrap_or_else(|| panic!("no token"));
+        let token = env
+            .storage()
+            .instance()
+            .get(&DataKey::Token)
+            .unwrap_or_else(|| panic!("no token"));
 
         // 1. Transfer payout to victor
         if payout > 0 {
@@ -237,14 +268,14 @@ impl PrizePoolCoordinatorContract {
                 victor.clone().into_val(&env),
                 payout.into_val(&env)
             ];
-            let _: () = env.invoke_contract(
-                &token,
-                &Symbol::new(&env, "transfer"),
-                args_victor,
-            );
+            let _: () = env.invoke_contract(&token, &Symbol::new(&env, "transfer"), args_victor);
         }
 
-        let fee_vault: Address = env.storage().instance().get(&DataKey::FeeVaultContract).unwrap_or_else(|| panic!("no fee_vault contract"));
+        let fee_vault: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::FeeVaultContract)
+            .unwrap_or_else(|| panic!("no fee_vault contract"));
 
         // 2. Transfer fee to fee_vault and call deposit_fee
         if fee > 0 {
@@ -254,22 +285,11 @@ impl PrizePoolCoordinatorContract {
                 fee_vault.clone().into_val(&env),
                 fee.into_val(&env)
             ];
-            let _: () = env.invoke_contract(
-                &token,
-                &Symbol::new(&env, "transfer"),
-                args_fee_vault,
-            );
+            let _: () = env.invoke_contract(&token, &Symbol::new(&env, "transfer"), args_fee_vault);
 
-            let deposit_args = soroban_sdk::vec![
-                &env,
-                epoch_id.into_val(&env),
-                fee.into_val(&env)
-            ];
-            let _: () = env.invoke_contract(
-                &fee_vault,
-                &Symbol::new(&env, "deposit_fee"),
-                deposit_args,
-            );
+            let deposit_args = soroban_sdk::vec![&env, epoch_id.into_val(&env), fee.into_val(&env)];
+            let _: () =
+                env.invoke_contract(&fee_vault, &Symbol::new(&env, "deposit_fee"), deposit_args);
         }
 
         // Finalize round status
@@ -278,8 +298,10 @@ impl PrizePoolCoordinatorContract {
         env.storage().persistent().set(&round_key, &round);
 
         // Publish event
-        let event_data: soroban_sdk::Vec<soroban_sdk::Val> = soroban_sdk::vec![&env, victor.clone().into_val(&env)];
-        env.events().publish((Symbol::new(&env, "round_settled"), epoch_id), event_data);
+        let event_data: soroban_sdk::Vec<soroban_sdk::Val> =
+            soroban_sdk::vec![&env, victor.clone().into_val(&env)];
+        env.events()
+            .publish((Symbol::new(&env, "round_settled"), epoch_id), event_data);
 
         victor
     }
@@ -293,17 +315,14 @@ impl PrizePoolCoordinatorContract {
     }
 
     pub fn get_entry_tokens(env: Env, epoch_id: u32, owner: Address) -> u32 {
-        let entry_token_contract = env.storage().instance().get(&DataKey::EntryTokenContract).unwrap_or_else(|| panic!("no entry_token contract"));
-        let args = soroban_sdk::vec![
-            &env,
-            owner.into_val(&env),
-            epoch_id.into_val(&env)
-        ];
-        let bal: u32 = env.invoke_contract(
-            &entry_token_contract,
-            &Symbol::new(&env, "balance"),
-            args,
-        );
+        let entry_token_contract = env
+            .storage()
+            .instance()
+            .get(&DataKey::EntryTokenContract)
+            .unwrap_or_else(|| panic!("no entry_token contract"));
+        let args = soroban_sdk::vec![&env, owner.into_val(&env), epoch_id.into_val(&env)];
+        let bal: u32 =
+            env.invoke_contract(&entry_token_contract, &Symbol::new(&env, "balance"), args);
         bal
     }
 

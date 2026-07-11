@@ -18,7 +18,9 @@ impl EntryTokenContract {
         if env.storage().instance().has(&DataKey::PrizePoolCoordinator) {
             panic!("already initialized");
         }
-        env.storage().instance().set(&DataKey::PrizePoolCoordinator, &coordinator_id);
+        env.storage()
+            .instance()
+            .set(&DataKey::PrizePoolCoordinator, &coordinator_id);
     }
 
     pub fn fetch_prize_pool_coordinator(env: Env) -> Address {
@@ -33,7 +35,11 @@ impl EntryTokenContract {
         prize_pool_coordinator.require_auth();
 
         let holders_key = DataKey::Holders(epoch_id);
-        let mut holders: soroban_sdk::Vec<Address> = env.storage().persistent().get(&holders_key).unwrap_or_else(|| soroban_sdk::Vec::new(&env));
+        let mut holders: soroban_sdk::Vec<Address> = env
+            .storage()
+            .persistent()
+            .get(&holders_key)
+            .unwrap_or_else(|| soroban_sdk::Vec::new(&env));
 
         holders.push_back(to.clone());
         env.storage().persistent().set(&holders_key, &holders);
@@ -52,19 +58,23 @@ impl EntryTokenContract {
     // Helper function for the prize_pool_coordinator contract to resolve the winning index to owner
     pub fn get_owner(env: Env, epoch_id: u32, index: u32) -> Address {
         let holders_key = DataKey::Holders(epoch_id);
-        let holders: soroban_sdk::Vec<Address> = env.storage()
+        let holders: soroban_sdk::Vec<Address> = env
+            .storage()
             .persistent()
             .get(&holders_key)
             .unwrap_or_else(|| panic!("round not found"));
-        
-        holders.get(index).unwrap_or_else(|| panic!("index out of bounds"))
+
+        holders
+            .get(index)
+            .unwrap_or_else(|| panic!("index out of bounds"))
     }
 
     // Helper function for the prize_pool_coordinator contract to query total entry_tokens
     pub fn get_entry_token_count(env: Env, epoch_id: u32) -> u32 {
         let holders_key = DataKey::Holders(epoch_id);
         if env.storage().persistent().has(&holders_key) {
-            let holders: soroban_sdk::Vec<Address> = env.storage().persistent().get(&holders_key).unwrap();
+            let holders: soroban_sdk::Vec<Address> =
+                env.storage().persistent().get(&holders_key).unwrap();
             holders.len()
         } else {
             0
