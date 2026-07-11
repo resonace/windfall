@@ -14,8 +14,8 @@ PRIZE_POOL_COORDINATOR=$(stellar contract deploy --wasm target/wasm32v1-none/rel
 XLM=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 
 echo "Initializing contracts..."
-stellar contract invoke --id $ENTRY_TOKEN --source windfall-deployer --network testnet -- init --prize_pool_coordinator_contract $PRIZE_POOL_COORDINATOR
-stellar contract invoke --id $FEE_VAULT --source windfall-deployer --network testnet -- init --admin $ADMIN --prize_pool_coordinator_contract $PRIZE_POOL_COORDINATOR --token $XLM
+stellar contract invoke --id $ENTRY_TOKEN --source windfall-deployer --network testnet -- init --coordinator_id $PRIZE_POOL_COORDINATOR
+stellar contract invoke --id $FEE_VAULT --source windfall-deployer --network testnet -- init --admin $ADMIN --coordinator_id $PRIZE_POOL_COORDINATOR --token $XLM
 stellar contract invoke --id $PRIZE_POOL_COORDINATOR --source windfall-deployer --network testnet -- init --admin $ADMIN --entry_token_contract $ENTRY_TOKEN --fee_vault_contract $FEE_VAULT --token $XLM --entry_token_price 10000000 --tax_basis_points 500
 
 echo "Opening round #1 for 1 hour..."
